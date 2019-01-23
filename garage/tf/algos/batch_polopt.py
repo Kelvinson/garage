@@ -3,10 +3,9 @@ import time
 import tensorflow as tf
 
 from garage.algos import RLAlgorithm
-import garage.misc.logger as logger
+from garage.logger import logger, snapshotter, tabular
 from garage.tf.plotter import Plotter
-from garage.tf.samplers import BatchSampler
-from garage.tf.samplers import OnPolicyVectorizedSampler
+from garage.tf.samplers import BatchSampler, OnPolicyVectorizedSampler
 
 
 class BatchPolopt(RLAlgorithm):
@@ -132,11 +131,11 @@ class BatchPolopt(RLAlgorithm):
                 params = self.get_itr_snapshot(itr, samples_data)
                 if self.store_paths:
                     params["paths"] = samples_data["paths"]
-                logger.save_itr_params(itr, params)
+                snapshotter.save_itr_params(itr, params)
                 logger.log("Saved")
-                logger.record_tabular('Time', time.time() - start_time)
-                logger.record_tabular('ItrTime', time.time() - itr_start_time)
-                logger.dump_tabular(with_prefix=False)
+                tabular.record('Time', time.time() - start_time)
+                tabular.record('ItrTime', time.time() - itr_start_time)
+                logger.log(tabular, with_prefix=False)
                 if self.plot:
                     self.plotter.update_plot(self.policy, self.max_path_length)
                     if self.pause_for_plot:

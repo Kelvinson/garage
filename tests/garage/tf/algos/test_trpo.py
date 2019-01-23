@@ -6,7 +6,7 @@ import gym
 import tensorflow as tf
 
 from garage.envs import normalize
-import garage.misc.logger as logger
+from garage.logger import logger, TensorBoardOutput
 from garage.tf.algos import TRPO
 from garage.tf.baselines import GaussianMLPBaseline
 from garage.tf.envs import TfEnv
@@ -17,7 +17,8 @@ from tests.fixtures import TfGraphTestCase
 class TestTRPO(TfGraphTestCase):
     def test_trpo_pendulum(self):
         """Test TRPO with Pendulum environment."""
-        logger.reset()
+
+        logger.reset_output(TensorBoardOutput())
         env = TfEnv(normalize(gym.make("InvertedDoublePendulum-v2")))
         policy = GaussianMLPPolicy(
             env_spec=env.spec,
@@ -48,7 +49,7 @@ class TestTRPO(TfGraphTestCase):
 
     def test_trpo_unknown_kl_constraint(self):
         """Test TRPO with unkown KL constraints."""
-        logger.reset()
+        logger.reset_output(TensorBoardOutput())
         env = TfEnv(normalize(gym.make("InvertedDoublePendulum-v2")))
         policy = GaussianMLPPolicy(
             env_spec=env.spec,

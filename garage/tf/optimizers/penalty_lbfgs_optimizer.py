@@ -3,7 +3,8 @@ import scipy.optimize
 import tensorflow as tf
 
 from garage.core import Serializable
-from garage.misc import ext, logger
+from garage.logger import logger
+from garage.misc import ext
 from garage.tf.misc import tensor_utils
 
 
@@ -143,7 +144,7 @@ class PenaltyLbfgsOptimizer(Serializable):
                 # Either constraint satisfied, or we are at the last iteration
                 # already and no alternative parameter satisfies the constraint
                 if try_constraint_val < self._max_constraint_val or \
-                        (penalty_itr == self._max_penalty_itr - 1 and \
+                        (penalty_itr == self._max_penalty_itr - 1 and
                             opt_params is None):
                     opt_params = itr_opt_params
 

@@ -132,7 +132,7 @@ def inherit(base_func):
 
 def get_all_parameters(cls, parsed_args):
     prefix = _get_prefix(cls)
-    if prefix is None or len(prefix) == 0:
+    if not prefix:
         raise ValueError('Cannot retrieve parameters without prefix')
     info = _get_info(cls)
     if inspect.ismethod(cls.__init__):

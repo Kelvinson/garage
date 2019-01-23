@@ -27,9 +27,9 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
+from garage.logger import CsvOutput, logger as garage_logger, TensorBoardOutput
 from garage.exploration_strategies import OUStrategy
 from garage.misc import ext
-from garage.misc import logger as garage_logger
 from garage.replay_buffer import SimpleReplayBuffer
 from garage.tf.algos import DDPG
 from garage.tf.envs import TfEnv
@@ -148,7 +148,7 @@ def run_garage(env, seed, log_dir):
             size_in_transitions=params["replay_buffer_size"],
             time_horizon=params["n_rollout_steps"])
 
-        ddpg = DDPG(
+        algo = DDPG(
             env,
             policy=policy,
             qf=qf,
@@ -169,13 +169,12 @@ def run_garage(env, seed, log_dir):
 
         # Set up logger since we are not using run_experiment
         tabular_log_file = osp.join(log_dir, "progress.csv")
-        tensorboard_log_dir = osp.join(log_dir)
-        garage_logger.add_tabular_output(tabular_log_file)
-        garage_logger.set_tensorboard_dir(tensorboard_log_dir)
+        garage_logger.add_output(CsvOutput(tabular_log_file))
+        garage_logger.add_output(TensorBoardOutput(log_dir))
 
-        ddpg.train()
+        algo.train()
 
-        garage_logger.remove_tabular_output(tabular_log_file)
+        garage_logger.remove_all()
 
         return tabular_log_file
 
