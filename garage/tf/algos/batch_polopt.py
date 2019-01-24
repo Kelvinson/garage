@@ -135,7 +135,7 @@ class BatchPolopt(RLAlgorithm):
                 logger.log("Saved")
                 tabular.record('Time', time.time() - start_time)
                 tabular.record('ItrTime', time.time() - itr_start_time)
-                logger.log(tabular, with_prefix=False)
+                logger.log(tabular)
                 if self.plot:
                     self.plotter.update_plot(self.policy, self.max_path_length)
                     if self.pause_for_plot:
