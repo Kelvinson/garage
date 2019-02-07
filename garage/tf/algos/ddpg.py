@@ -291,8 +291,8 @@ class DDPG(OffPolicyRLAlgorithm):
         target_qvals = self.target_qf_f_prob_online(next_inputs,
                                                     target_actions)
 
-        clip_range = (-self.clip_return, 0.
-                      if self.clip_pos_returns else self.clip_return)
+        clip_range = (-self.clip_return,
+                      0. if self.clip_pos_returns else self.clip_return)
         ys = np.clip(
             rewards + (1.0 - terminals) * self.discount * target_qvals,
             clip_range[0], clip_range[1])
