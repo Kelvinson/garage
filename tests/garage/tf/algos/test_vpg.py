@@ -1,3 +1,4 @@
+from garage import config
 from garage.baselines import LinearFeatureBaseline
 from garage.logger import logger, TensorBoardOutput
 from garage.tf.algos import VPG
