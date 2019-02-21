@@ -9,9 +9,14 @@ from garage.misc import special
 from garage.misc.overrides import overrides
 from garage.tf.algos import BatchPolopt
 from garage.tf.misc import tensor_utils
-from garage.tf.misc.tensor_utils import (
-    compute_advantages, discounted_returns, filter_valids, filter_valids_dict,
-    flatten_batch, flatten_batch_dict, flatten_inputs, graph_inputs)
+from garage.tf.misc.tensor_utils import compute_advantages
+from garage.tf.misc.tensor_utils import discounted_returns
+from garage.tf.misc.tensor_utils import filter_valids
+from garage.tf.misc.tensor_utils import filter_valids_dict
+from garage.tf.misc.tensor_utils import flatten_batch
+from garage.tf.misc.tensor_utils import flatten_batch_dict
+from garage.tf.misc.tensor_utils import flatten_inputs
+from garage.tf.misc.tensor_utils import graph_inputs
 from garage.tf.optimizers import LbfgsOptimizer
 
 

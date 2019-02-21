@@ -7,10 +7,11 @@ from garage.envs import normalize
 from garage.logger import logger, TensorBoardOutput
 from garage.tf.algos import TRPO
 from garage.tf.envs import TfEnv
-from garage.tf.optimizers import (ConjugateGradientOptimizer,
-                                  FiniteDifferenceHvp)
-from garage.tf.policies import (GaussianGRUPolicy, GaussianLSTMPolicy,
-                                GaussianMLPPolicy)
+from garage.tf.optimizers import ConjugateGradientOptimizer
+from garage.tf.optimizers import FiniteDifferenceHvp
+from garage.tf.policies import GaussianGRUPolicy
+from garage.tf.policies import GaussianLSTMPolicy
+from garage.tf.policies import GaussianMLPPolicy
 from tests.fixtures import TfGraphTestCase
 
 policies = [GaussianGRUPolicy, GaussianLSTMPolicy, GaussianMLPPolicy]
