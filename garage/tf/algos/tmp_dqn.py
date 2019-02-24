@@ -62,7 +62,6 @@ class DQN(OffPolicyRLAlgorithm):
             self.done_t_ph = tf.placeholder(tf.float32, None, name="done")
             self.next_obs_t_ph = tf.placeholder(
                 tf.float32, (None, ) + obs_dim, name="next_obs")
-            self.importance_weights_ph = tf.placeholder(tf.float32, [None], name="weight")
 
             self.target_qval = self.qf.build_net(
                 name="target_qf", input_var=self.next_obs_t_ph)
@@ -90,8 +89,8 @@ class DQN(OffPolicyRLAlgorithm):
 
             q_best_masked = (1.0 - self.done_t_ph) * future_best_q_val
             self.dones = 1.0 - self.done_t_ph
-            # print()
-            # print(q_best_masked.shape)
+            print()
+            print(q_best_masked.shape)
             self.q_best_masked = q_best_masked
             # if done, it's just reward
             # else reward + discount * future_best_q_val
@@ -119,7 +118,7 @@ class DQN(OffPolicyRLAlgorithm):
                         gradients[i] = (tf.clip_by_norm(grad, self.grad_norm_clipping), var)
                 self._optimize_loss = optimizer.apply_gradients(gradients)
             else:
-                self._optimize_loss = optimizer.minimize(self._loss, var_list=self.qf.get_global_vars())
+                self._optimize_loss = optimizer.minimize(self._loss, var_list=self.qf.get_trainable_vars())
 
     @overrides
     def train(self, sess=None):
@@ -144,69 +143,57 @@ class DQN(OffPolicyRLAlgorithm):
         episode_qf_losses = []
         last_average_return = []
         obses = self.env.reset()
-        ts = 0
 
         for itr in range(self.n_epochs):
             with logger.prefix('Time step #%d | ' % itr):
                 # for epoch_cycle in range(self.n_epoch_cycles):
                     # paths = self.obtain_samples(itr)
                     # samples_data = self.process_samples(itr, paths)
-                actions, agent_info = self.es.get_action(
-                    itr, obses, self.policy)
-                # actions, agent_info = self.policy.get_action(obses)
+                actions, agent_infos = self.policy.get_actions([obses])
                 next_obses, rewards, dones, env_infos = self.env.step(actions)
-                # print('reward:{}, action: {}, done:{}'.format(rewards, actions, dones))
                 self.replay_buffer.add_transition(
-                    observation=[obses],
-                    action=[actions],
-                    reward=[rewards],
-                    terminal=[dones],
-                    next_observation=[next_obses],
+                    observation=obses,
+                    action=actions,
+                    reward=rewards,
+                    terminal=dones,
+                    next_observation=next_obses,
                 )
-                ts += 1
                 episode_rewards[-1] += rewards
                 if dones:
-                    print("epoch:{} episode length: {}".format(itr, ts))
-                    ts = 0
                     obses = self.env.reset()
                     episode_rewards.append(0.)
 
                 # episode_rewards.extend(samples_data["undiscounted_returns"])
                 # self.log_diagnostics(paths)
-                if itr % self.train_freq == 0:
+                if (itr + 1) % self.train_freq == 0:
                     if self.replay_buffer.n_transitions_stored >= self.min_buffer_size:  # noqa: E501
                         self.evaluate = True
                         qf_loss = self.optimize_policy(itr, sample_data=None)
                         episode_qf_losses.append(qf_loss)
 
-                if itr % self.target_network_update_freq == 0:
+                if (itr + 1) % self.target_network_update_freq == 0:
                     self.sess.run(self._qf_init_ops, feed_dict=dict())
 
-                mean_100ep_reward = round(np.mean(episode_rewards[-101:-1]), 1)
+            if self.plot:
+                self.plotter.update_plot(self.policy, self.max_path_length)
+                if self.pause_for_plot:
+                    input("Plotting evaluation run: Press Enter to "
+                          "continue...")
 
-                if self.plot:
-                    self.plotter.update_plot(self.policy, self.max_path_length)
-                    if self.pause_for_plot:
-                        input("Plotting evaluation run: Press Enter to "
-                              "continue...")
+            if self.evaluate:
+                logger.record_tabular('Epoch', itr)
+                logger.record_tabular('AverageReturn',
+                                      np.mean(episode_rewards))
+                logger.record_tabular('self.envStdReturn', np.std(episode_rewards))
+                logger.record_tabular('QFunction/AverageQFunctionLoss',
+                                      np.mean(episode_qf_losses))
+                last_average_return.append(np.mean(episode_rewards))
 
-                if dones and self.evaluate and len(episode_rewards) % 100 == 0:
-                    logger.record_tabular('Epoch', itr)
-                    logger.record_tabular('num episodes', len(episode_rewards))
-                    logger.record_tabular('AverageReturn',
-                                          np.mean(episode_rewards))
-                    logger.record_tabular('mean 100 episode reward', np.mean(mean_100ep_reward))
-                    logger.record_tabular('StdReturn', np.std(episode_rewards))
-                    logger.record_tabular('QFunction/AverageQFunctionLoss',
-                                          np.mean(episode_qf_losses[-1]))
-                    last_average_return.append(np.mean(episode_rewards))
+            # if not self.smooth_return:
+            #     episode_rewards = [0.]
+            #     episode_qf_losses = []
 
-                # if not self.smooth_return:
-                #     episode_rewards = [0.]
-                #     episode_qf_losses = []
-
-                logger.dump_tabular(with_prefix=False)
-                obses = next_obses
+            logger.dump_tabular(with_prefix=False)
 
         self.shutdown_worker()
         if created_session:
@@ -224,11 +211,9 @@ class DQN(OffPolicyRLAlgorithm):
         next_observations = transitions["next_observation"]
         dones = transitions["terminal"]
 
-        weights, batch_idxes = np.ones_like(rewards), None
-
-        # print(observations)
-        # print(rewards)
-        # print(actions)
+        print(observations)
+        print(rewards)
+        print(actions)
 
         # rewards = rewards.reshape(-1, 1)
         # dones = dones.reshape(-1, 1)
@@ -245,13 +230,12 @@ class DQN(OffPolicyRLAlgorithm):
                 self.action_t_ph: actions,
                 self.reward_t_ph: rewards,
                 self.done_t_ph: dones,
-                self.next_obs_t_ph: next_observations,
-                self.importance_weights_ph: weights
+                self.next_obs_t_ph: next_observations
             })
 
-        # print(np.array(one_hots).shape)
-        # print(np.array(q_best_masked).shape)
-        # print(np.array(target_qval).shape)
+        print(np.array(one_hots).shape)
+        print(np.array(q_best_masked).shape)
+        print(np.array(target_qval).shape)
 
         loss, _, td_error, q_best_masked = self.sess.run(
             [self._loss, self._optimize_loss, self._td_error, self.q_best_masked],
@@ -260,8 +244,7 @@ class DQN(OffPolicyRLAlgorithm):
                 self.action_t_ph: actions,
                 self.reward_t_ph: rewards,
                 self.done_t_ph: dones,
-                self.next_obs_t_ph: next_observations,
-                self.importance_weights_ph: weights
+                self.next_obs_t_ph: next_observations
             })
 
         # print('q_best_masked: {}'.format(q_best_masked.shape))

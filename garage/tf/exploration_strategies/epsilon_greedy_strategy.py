@@ -63,6 +63,7 @@ class EpsilonGreedyStrategy(ExplorationStrategy):
         if self._epsilon > self._min_epsilon:
             self._epsilon -= (
                 self._max_epsilon - self._min_epsilon) / self._decay_period
+        # print(self._epsilon)
 
         opt_action, agent_info = policy.get_action(observation)
 

@@ -26,10 +26,11 @@ import tensorflow as tf
 
 def run_task(*_):
     """Run task."""
-    max_path_length = 100
-    n_epochs = 10000
+    max_path_length = 1
+    n_epochs = int(1e7)
+    n_epoch_cycles = 10
 
-    env = gym.make("BreakoutNoFrameskip-v4")
+    env = gym.make("PongNoFrameskip-v4")
     env = EpisodicLife(env)
     env = Noop(env, noop_max=30)
     env = MaxAndSkip(env, skip=4)
@@ -44,7 +45,7 @@ def run_task(*_):
 
     replay_buffer = SimpleReplayBuffer(
         env_spec=env.spec,
-        size_in_transitions=int(5e4),
+        size_in_transitions=int(1e5),
         time_horizon=max_path_length,
         dtype="uint8")
 
@@ -68,14 +69,17 @@ def run_task(*_):
         replay_buffer=replay_buffer,
         max_path_length=max_path_length,
         n_epochs=n_epochs,
-        qf_lr=1e-3,
+        n_epoch_cycles=n_epoch_cycles,
+        qf_lr=1e-4,
         discount=0.99,
         grad_norm_clipping=10,
         double_q=True,
-        min_buffer_size=1e4,
-        n_train_steps=500,
+        min_buffer_size=10000,
+        n_train_steps=1,
+        train_freq=100,
         smooth_return=False,
-        target_network_update_freq=2,
+        plot=False,
+        target_network_update_freq=1000,
         buffer_batch_size=32)
 
     algo.train()

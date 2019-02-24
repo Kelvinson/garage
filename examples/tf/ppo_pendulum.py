@@ -10,13 +10,14 @@ Results:
     RiseTime: itr 250
 """
 import gym
+import tensorflow as tf
 
 from garage.envs import normalize
 from garage.experiment import run_experiment
 from garage.tf.algos import PPO
 from garage.tf.baselines import GaussianMLPBaseline
 from garage.tf.envs import TfEnv
-from garage.tf.policies import GaussianMLPPolicy
+from garage.tf.policies import GaussianMLPPolicyWithModel
 
 
 def run_task(*_):
@@ -26,9 +27,12 @@ def run_task(*_):
     :param _:
     :return:
     """
+    sess = tf.Session()
+    sess.__enter__()
+    
     env = TfEnv(normalize(gym.make("InvertedDoublePendulum-v2")))
 
-    policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(64, 64))
+    policy = GaussianMLPPolicyWithModel(env_spec=env.spec, hidden_sizes=(64, 64))
 
     baseline = GaussianMLPBaseline(env_spec=env.spec)
 
@@ -43,7 +47,7 @@ def run_task(*_):
         lr_clip_range=0.01,
         optimizer_args=dict(batch_size=32, max_epochs=10),
         plot=False)
-    algo.train()
+    algo.train(sess=sess)
 
 
 run_experiment(

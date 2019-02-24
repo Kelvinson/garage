@@ -51,6 +51,7 @@ class OffPolicyVectorizedSampler(BatchSampler):
             self.vec_env = VecEnvExecutor(
                 envs=envs, max_path_length=self.algo.max_path_length)
         self.env_spec = self.algo.env.spec
+        self.last_obses = None
 
     @overrides
     def shutdown_worker(self):
@@ -66,11 +67,15 @@ class OffPolicyVectorizedSampler(BatchSampler):
         :return: A list of paths.
         """
         paths = []
-        obses = self.vec_env.reset()
+        obses = self.last_obses if self.last_obses else self.vec_env.reset() 
+        # print("obeses==self.last_obses {}".format(obses == self.last_obses))
+        # print(self.last_obses)
+
         dones = np.asarray([True] * self.vec_env.num_envs)
         running_paths = [None] * self.vec_env.num_envs
         n_samples = 0
         batch_samples = self.vec_env.num_envs * self.algo.max_path_length
+        # print("batch_samples: {}".format(batch_samples))
 
         policy = self.algo.policy
         if self.algo.es:
@@ -123,6 +128,7 @@ class OffPolicyVectorizedSampler(BatchSampler):
                     terminal=dones,
                     next_observation=next_obses,
                 )
+            n_samples += 1
 
             for idx, reward, env_info, done in zip(itertools.count(), rewards,
                                                    env_infos, dones):
@@ -141,12 +147,13 @@ class OffPolicyVectorizedSampler(BatchSampler):
                                 running_paths[idx]["rewards"]),
                             env_infos=tensor_utils.stack_tensor_dict_list(
                                 running_paths[idx]["env_infos"])))
-                    n_samples += len(running_paths[idx]["rewards"])
                     running_paths[idx] = None
 
                     if self.algo.es:
                         self.algo.es.reset()
+
             obses = next_obses
+        self.last_obses = obses
         return paths
 
     @overrides
@@ -158,6 +165,7 @@ class OffPolicyVectorizedSampler(BatchSampler):
         :param paths: A list of collected paths.
         :return: Processed sample data.
         """
+        # print(paths)
         success_history = []
         for path in paths:
             if "is_success" in path["env_infos"]:

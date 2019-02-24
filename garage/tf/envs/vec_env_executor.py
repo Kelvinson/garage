@@ -29,8 +29,9 @@ class VecEnvExecutor:
                         self.lives[i] = env_infos[i]["ale.lives"]
 
         self.ts += 1
-        if self.max_path_length is not None:
-            dones[self.ts >= self.max_path_length] = True
+        # print('done: {}'.format(dones))
+        # if self.max_path_length is not None:
+        #     dones[self.ts >= self.max_path_length] = True
         for (i, done) in enumerate(dones):
             if done:
                 obs[i] = self.envs[i].reset()
