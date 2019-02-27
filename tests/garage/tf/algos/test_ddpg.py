@@ -5,8 +5,8 @@ too low.
 import gym
 import tensorflow as tf
 
-from garage.logger import logger, TensorBoardOutput
 from garage.exploration_strategies import OUStrategy
+from garage.logger import logger, TensorBoardOutput
 from garage.replay_buffer import SimpleReplayBuffer
 from garage.tf.algos import DDPG
 from garage.tf.envs import TfEnv
